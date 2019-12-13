@@ -1,0 +1,16 @@
+{
+  "name": "stitch",
+  "version": "1.0.0",
+  "description": "Autostitcher for Olympus confocal microscope",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^4.0.1",
+    "imagemagick": "^0.1.3",
+    "xml2js": "^0.4.22"
+  }
+}
