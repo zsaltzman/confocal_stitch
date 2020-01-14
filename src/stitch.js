@@ -6,7 +6,10 @@ const sep = path.sep;
 const program = require('commander');
 const xml2js = require('xml2js').parseStringPromise;
 
+const cvcompare = require('./cv_overlap_reduce.js');
+
 const convertedImgString = 'converted_img';
+
 program
     .option('-i, --indir <path>', 'Input directory for images to stitch')
     .option('-o, --outdir <path>', 'Output directory for stitched images', '/mnt/c/Users/Zach/Desktop/' + convertedImgString);
@@ -190,6 +193,7 @@ let stitchTifs = async (processedDirectories, tifPath) => {
 		// stitch each row of the image, then stitch each col
 		let rowPromiseArray = [];
 		for (let j = 0; j <= numRows; j++) {
+            let rowCropPromiseArray = [];
 			let rowImages = imageSet
 				.filter( (e) => { return e.row === j; })
 				.sort( (a, b) => { return a.col - b.col; })
@@ -204,7 +208,28 @@ let stitchTifs = async (processedDirectories, tifPath) => {
 
 			rowTifs = rowTifs.map( (e) => { return tifPath + sep + e; });
 
-			console.log('row tifs', rowTifs);
+            for (let i = 0; i < rowTifs.length - 1; i++) {
+                let cropParams = await cvcompare.calc_distance(rowTifs[i], rowTifs[i + 1]);
+                console.log('params', cropParams);
+                await new Promise( (resolve, reject) => {
+                    im.crop({
+                        'srcPath' : rowTifs[i],
+                        'dstPath' : rowTifs[i],
+                        'width' : (cropParams.baseWidth - cropParams.distance),
+                        'height' : cropParams.baseHeight,
+                        'quality' : 1,
+                        'gravity' : 'East'
+                    }, (err, stdout) => {
+                        if (err) { 
+                            console.log('An error occured while stitching rows', err); 
+                            reject(); 
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+            }
+
 			let rowConvertParams = rowTifs;
 			let rowName = tifPath + sep + 'stitched_row_' + i + '_' + j + '.tif'
 			rowConvertParams.push('+append', rowName);
@@ -253,7 +278,7 @@ let run = async (indir, outdir) => {
 };
 
 run(program.indir, program.outdir);
-
+  
 function zeroPad(num) {
 	if (num < 10) { return '0' + num; }
 	else { return '' + num; }
