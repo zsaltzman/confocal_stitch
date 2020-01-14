@@ -172,6 +172,10 @@ let stackTifs = async (directories, inputPath, outputPath) => {
 };
 
 let stitchTifs = async (processedDirectories, tifPath) => {
+
+    //create the directory for the cropped tifs
+    const croppedImagesDir = tifPath + path.sep + 'cropped_images';
+
 	// organize tifs by index number, stitch them together left to right (1 farthest left, last one farthest right)
 	let tifs = await fs.readdir(tifPath);
 	let promiseArray = [];
@@ -211,10 +215,11 @@ let stitchTifs = async (processedDirectories, tifPath) => {
             for (let i = 0; i < rowTifs.length - 1; i++) {
                 let cropParams = await cvcompare.calc_distance(rowTifs[i], rowTifs[i + 1]);
                 console.log('params', cropParams);
+                let tifname = rowTifs[i].split(path.sep); tifname = tifname[tifname.length - 1];
                 await new Promise( (resolve, reject) => {
                     im.crop({
                         'srcPath' : rowTifs[i],
-                        'dstPath' : rowTifs[i],
+                        'dstPath' : croppedImagesDir + path.sep + tifname,
                         'width' : (cropParams.baseWidth - cropParams.distance),
                         'height' : cropParams.baseHeight,
                         'quality' : 1,
